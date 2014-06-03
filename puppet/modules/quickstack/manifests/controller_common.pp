@@ -11,6 +11,8 @@ class quickstack::controller_common (
   $cinder_backend_eqlx_name      = $quickstack::params::cinder_backend_eqlx_name,
   $cinder_backend_iscsi          = $quickstack::params::cinder_backend_iscsi,
   $cinder_backend_iscsi_name     = $quickstack::params::cinder_backend_iscsi_name,
+  $cinder_backend_rbd            = $quickstack::params::cinder_backend_rbd,
+  $cinder_backend_rbd_name       = $quickstack::params::cinder_backend_rbd_name,
   $cinder_db_password            = $quickstack::params::cinder_db_password,
   $cinder_gluster_peers          = $quickstack::params::cinder_gluster_peers,
   $cinder_san_ip                 = $quickstack::params::cinder_san_ip,
@@ -22,6 +24,13 @@ class quickstack::controller_common (
   $cinder_eqlx_use_chap          = $quickstack::params::cinder_eqlx_use_chap,
   $cinder_eqlx_chap_login        = $quickstack::params::cinder_eqlx_chap_login,
   $cinder_eqlx_chap_password     = $quickstack::params::cinder_eqlx_chap_password,
+  $cinder_rbd_pool               = $quickstack::params::cinder_rbd_pool,
+  $cinder_rbd_ceph_conf          = $quickstack::params::cinder_rbd_ceph_conf,
+  $cinder_rbd_flatten_volume_from_snapshot
+                                 = $quickstack::params::cinder_rbd_flatten_volume_from_snapshot,
+  $cinder_rbd_max_clone_depth    = $quickstack::params::cinder_rbd_max_clone_depth,
+  $cinder_rbd_user               = $quickstack::params::cinder_rbd_user,
+  $cinder_rbd_secret_uuid        = $quickstack::params::cinder_rbd_secret_uuid,
   $cinder_gluster_volume         = $quickstack::params::cinder_gluster_volume,
   $cinder_user_password          = $quickstack::params::cinder_user_password,
   $controller_admin_host         = $quickstack::params::controller_admin_host,
@@ -29,6 +38,9 @@ class quickstack::controller_common (
   $controller_pub_host           = $quickstack::params::controller_pub_host,
   $glance_db_password            = $quickstack::params::glance_db_password,
   $glance_user_password          = $quickstack::params::glance_user_password,
+  $glance_backend                = $quickstack::params::glance_backend,
+  $glance_rbd_store_user         = $quickstack::params::glance_rbd_store_user,
+  $glance_rbd_store_pool         = $quickstack::params::glance_rbd_store_pool,
   $heat_cfn                      = $quickstack::params::heat_cfn,
   $heat_cloudwatch               = $quickstack::params::heat_cloudwatch,
   $heat_db_password              = $quickstack::params::heat_db_password,
@@ -213,12 +225,18 @@ class quickstack::controller_common (
   }
 
   # TODO, replace below two stanzas with quickstack::glance
+  # TODO, openstack::glance does not support show_image_direct_url
+  # yet, will need to add that when transitioning to
+  # quickstack::glance
   class {'openstack::glance':
     db_host        => $mysql_host,
     db_ssl         => str2bool_i("$ssl"),
     db_ssl_ca      => $mysql_ca,
     user_password  => $glance_user_password,
     db_password    => $glance_db_password,
+    backend        => $glance_backend,
+    rbd_store_user => $glance_rbd_store_user,
+    rbd_store_pool => $glance_rbd_store_pool,
     require        => Class['quickstack::db::mysql'],
   }
   class { 'glance::notify::qpid':
@@ -306,6 +324,8 @@ class quickstack::controller_common (
     cinder_backend_eqlx_name    => $cinder_backend_eqlx_name,
     cinder_backend_iscsi        => $cinder_backend_iscsi,
     cinder_backend_iscsi_name   => $cinder_backend_iscsi_name,
+    cinder_backend_rbd           => $cinder_backend_rbd,
+    cinder_backend_rbd_name      => $cinder_backend_rbd_name,
     cinder_db_password          => $cinder_db_password,
     cinder_gluster_volume       => $cinder_gluster_volume,
     cinder_gluster_peers        => $cinder_gluster_peers,
@@ -318,6 +338,13 @@ class quickstack::controller_common (
     cinder_eqlx_use_chap        => $cinder_eqlx_use_chap,
     cinder_eqlx_chap_login      => $cinder_eqlx_chap_login,
     cinder_eqlx_chap_password   => $cinder_eqlx_chap_password,
+    cinder_rbd_pool             => $cinder_rbd_pool,
+    cinder_rbd_ceph_conf        => $cinder_rbd_ceph_conf,
+    cinder_rbd_flatten_volume_from_snapshot
+                                => $cinder_rbd_flatten_volume_from_snapshot,
+    cinder_rbd_max_clone_depth  => $cinder_rbd_max_clone_depth,
+    cinder_rbd_user             => $cinder_rbd_user,
+    cinder_rbd_secret_uuid      => $cinder_rbd_secret_uuid,
     cinder_user_password        => $cinder_user_password,
     controller_priv_host        => $controller_priv_host,
     mysql_host                  => $mysql_host,

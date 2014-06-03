@@ -6,6 +6,8 @@ class quickstack::cinder_controller(
   $cinder_backend_gluster_name = $quickstack::params::cinder_backend_gluster_name,
   $cinder_backend_eqlx_name    = $quickstack::params::cinder_backend_eqlx_name,
   $cinder_backend_iscsi_name   = $quickstack::params::cinder_backend_iscsi_name,
+  $cinder_backend_rbd          = $quickstack::params::cinder_backend_rbd,
+  $cinder_backend_rbd_name     = $quickstack::params::cinder_backend_rbd_name,
   $cinder_db_password          = $quickstack::params::cinder_db_password,
   $cinder_gluster_volume       = $quickstack::params::cinder_gluster_volume,
   $cinder_gluster_peers        = $quickstack::params::cinder_gluster_peers,
@@ -19,6 +21,13 @@ class quickstack::cinder_controller(
   $cinder_eqlx_chap_login      = $quickstack::params::cinder_eqlx_chap_login,
   $cinder_eqlx_chap_password   = $quickstack::params::cinder_eqlx_chap_password,
   $cinder_user_password        = $quickstack::params::cinder_user_password,
+  $cinder_rbd_pool             = $quickstack::params::cinder_rbd_pool,
+  $cinder_rbd_ceph_conf        = $quickstack::params::cinder_rbd_ceph_conf,
+  $cinder_rbd_flatten_volume_from_snapshot
+                               = $quickstack::params::cinder_rbd_flatten_volume_from_snapshot,
+  $cinder_rbd_max_clone_depth  = $quickstack::params::cinder_rbd_max_clone_depth,
+  $cinder_rbd_user             = $quickstack::params::cinder_rbd_user,
+  $cinder_rbd_secret_uuid      = $quickstack::params::cinder_rbd_secret_uuid,
   $controller_priv_host        = $quickstack::params::controller_priv_host,
   $mysql_host                  = $quickstack::params::mysql_host,
   $mysql_ca                    = $quickstack::params::mysql_ca,
@@ -109,6 +118,21 @@ class quickstack::cinder_controller(
         eqlx_chap_password => $cinder_eqlx_chap_password,
       }
     }
+    elsif str2bool_i("$cinder_backend_rbd") {
+
+      class { '::cinder::volume': }
+
+      cinder::backend::rbd { 'rbd':
+        volume_backend_name  => $cinder_backend_rbd_name,
+        rbd_pool             => $cinder_rbd_pool,
+        rbd_ceph_conf        => $cinder_rbd_ceph_conf,
+        rbd_flatten_volume_from_snapshot
+                             => $cinder_rbd_flatten_volume_from_snapshot,
+        rbd_max_clone_depth  => $cinder_rbd_max_clone_depth,
+        rbd_user             => $cinder_rbd_user,
+        rbd_secret_uuid      => $cinder_rbd_secret_uuid,
+      }
+    }
     else {
       #Default to ISCSI
       class { '::cinder::volume': }
@@ -169,8 +193,24 @@ class quickstack::cinder_controller(
       }
     }
 
+    if str2bool_i("$cinder_backend_rbd") {
+
+      $r_backend =["rbd"]
+
+      cinder::backend::rbd { 'rbd':
+        volume_backend_name => $cinder_backend_rbd_name,
+        rbd_pool             => $cinder_rbd_pool,
+        rbd_ceph_conf        => $cinder_rbd_ceph_conf,
+        rbd_flatten_volume_from_snapshot
+                             => $cinder_rbd_flatten_volume_from_snapshot,
+        rbd_max_clone_depth  => $cinder_rbd_max_clone_depth,
+        rbd_user             => $cinder_rbd_user,
+        rbd_secret_uuid      => $cinder_rbd_secret_uuid,
+      }
+    }
+
     # ISCSI Backend
-    if str2bool_i("$cinder_backend_iscsi")  or ( !str2bool_i("$cinder_backend_glusterfs") and !str2bool_i("$cinder_backend_eqlx")) {
+    if str2bool_i("$cinder_backend_iscsi")  or ( !str2bool_i("$cinder_backend_glusterfs") and !str2bool_i("$cinder_backend_eqlx") and !str2bool_i("$cinder_backend_rbd")) {
 
       $i_backend = ["iscsi"]
 
@@ -187,7 +227,7 @@ class quickstack::cinder_controller(
 
     # Enable the backends
     class { 'cinder::backends':
-      enabled_backends => join_arrays_if_exist('g_backend', 'e_backend', 'i_backend'),
+      enabled_backends => join_arrays_if_exist('g_backend', 'e_backend', 'i_backend', 'r_backend'),
     }
   }
 }

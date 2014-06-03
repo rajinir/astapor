@@ -36,6 +36,8 @@ class quickstack::params {
   $cinder_backend_eqlx_name     = 'eqlx_backend'
   $cinder_backend_iscsi         = false
   $cinder_backend_iscsi_name    = 'iscsi_backend'
+  $cinder_backend_rbd           = false
+  $cinder_backend_rbd_name      = 'rbd_backend'
   # Cinder gluster
   $cinder_gluster_volume        = 'cinder'
   $cinder_gluster_path          = '/srv/gluster/cinder'
@@ -51,10 +53,24 @@ class quickstack::params {
   $cinder_eqlx_use_chap         = false
   $cinder_eqlx_chap_login       = 'chapadmin'
   $cinder_eqlx_chap_password    = 'CHANGEME'
+  #  Cinder RBD
+  $cinder_rbd_pool              = 'volumes'
+  $cinder_rbd_ceph_conf         = '/etc/ceph/ceph.conf'
+  $cinder_rbd_flatten_volume_from_snapshot
+                                = false
+  $cinder_rbd_max_clone_depth   = '5'
+  $cinder_rbd_user              = 'cinder'
+  $cinder_rbd_secret_uuid       = 'cca93169-0dfb-4c76-b043-040a5f19e504'
 
   # Glance
   $glance_db_password           = 'CHANGEME'
   $glance_user_password         = 'CHANGEME'
+  $glance_backend               = 'file'
+
+  # Glance RBD
+  $glance_rbd_store_user        = 'glance'
+  $glance_rbd_store_pool        = 'images'
+
   # Glance_Gluster
   $glance_gluster_volume        = 'glance'
   $glance_gluster_path          = '/srv/gluster/glance'
