@@ -177,20 +177,25 @@ class quickstack::cinder_controller(
     }
 
     if str2bool_i("$cinder_backend_eqlx") {
+	
+          $count = size(split(regsubst($cinder_backend_eqlx_name,'[\[\]]','','G'),','))
+	  $last = $count -1
+          $e_backend = produce_array_with_prefix("eqlx",1,$count)  #Initialize with section headers
 
-      $e_backend =["eqlx"]
-
-      cinder::backend::eqlx { 'eqlx':
-        volume_backend_name => $cinder_backend_eqlx_name,
-        san_login           => $cinder_san_login,
-        san_password        => $cinder_san_password,
-        san_thin_provision  => $cinder_san_thin_provision,
-        eqlx_group_name     => $cinder_eqlx_group_name,
-        eqlx_pool           => $cinder_eqlx_pool,
-        eqlx_use_chap       => $cinder_eqlx_use_chap,
-        eqlx_chap_login     => $cinder_eqlx_chap_login,
-        eqlx_chap_password  => $cinder_eqlx_chap_password,
-      }
+	  quickstack::cinder::eqlx { $last:
+	    index => $last,
+            backend_section_name_array => $e_backend,
+	    backend_eqlx_name_array => split(regsubst($cinder_backend_eqlx_name,'[\[\]]','','G'), ','),
+	    san_ip_array => split(regsubst($cinder_san_ip,'[\[\]]','','G'), ','),
+	    san_login_array => split(regsubst($cinder_san_login,'[\[\]]','','G' ), ','),
+	    san_password_array => split(regsubst($cinder_san_password,'[\[\]]','','G'), ','),
+	    san_thin_provision_array => split(regsubst($cinder_san_thin_provision,'[\[\]]','','G'), ','),
+	    eqlx_group_name_array => split(regsubst($cinder_eqlx_group_name,'[\[\]]','','G'), ','),
+	    eqlx_pool_array => split(regsubst($cinder_eqlx_pool,'[\[\]]','','G'), ','),
+	    eqlx_use_chap_array => split(regsubst($cinder_eqlx_use_chap,'[\[\]]','','G'),','),
+	    eqlx_chap_login_array => split(regsubst($cinder_eqlx_chap_login,'[\[\]]','','G'), ','),
+	    eqlx_chap_password_array => split(regsubst($cinder_eqlx_chap_password,'[\[\]]','','G'), ',')
+	   }     
     }
 
     if str2bool_i("$cinder_backend_rbd") {
@@ -231,3 +236,66 @@ class quickstack::cinder_controller(
     }
   }
 }
+
+#EqualLogic Definition to Support Multiple Instance
+define quickstack::cinder::eqlx (
+  $index,
+  $backend_section_name_array,
+  $backend_eqlx_name_array,
+  $san_ip_array,
+  $san_login_array,
+  $san_password_array,
+  $san_thin_provision_array,
+  $eqlx_group_name_array,
+  $eqlx_pool_array,
+  $eqlx_use_chap_array,
+  $eqlx_chap_login_array,
+  $eqlx_chap_password_array
+) {
+  
+  if($index >= 0)
+  { 
+    $backend_section_name = $backend_section_name_array[$index]
+    $backend_eqlx_name = $backend_eqlx_name_array[$index]
+    $san_ip = $san_ip_array[$index]
+    $san_login = $san_login_array[$index]
+    $san_password = $san_password_array[$index]
+    $san_thin_provision = $san_thin_provision_array[$index]
+    $eqlx_group_name = $eqlx_group_name_array[$index]
+    $eqlx_pool = $eqlx_pool_array[$index]
+    $eqlx_use_chap = $eqlx_use_chap_array[$index]
+    $eqlx_chap_login = $eqlx_chap_login_array[$index]
+    $eqlx_chap_password = $eqlx_chap_password_array[$index]
+
+    cinder::backend::eqlx { $backend_section_name:
+      volume_backend_name => $backend_eqlx_name,
+      san_ip             => $san_ip,
+      san_login          => $san_login,
+      san_password       => $san_password,
+      san_thin_provision => $san_thin_provision,
+      eqlx_group_name    => $eqlx_group_name,
+      eqlx_pool          => $eqlx_pool,
+      eqlx_use_chap      => str2bool_i("$eqlx_use_chap"),
+      eqlx_chap_login    => $eqlx_chap_login,
+      eqlx_chap_password => $eqlx_chap_password,
+    }
+
+    #recurse for multiple
+    $next = $index -1 
+    quickstack::cinder::eqlx { $next:
+      index => $next,
+      backend_section_name_array => $backend_section_name_array,
+      backend_eqlx_name_array => $backend_eqlx_name_array,
+      san_ip_array => $san_ip_array,
+      san_login_array => $san_login_array,
+      san_password_array => $san_password_array,
+      san_thin_provision_array => $san_thin_provision_array,
+      eqlx_group_name_array => $eqlx_group_name_array,
+      eqlx_pool_array => $eqlx_pool_array,
+      eqlx_use_chap_array => $eqlx_use_chap_array,
+      eqlx_chap_login_array => $eqlx_chap_login_array,
+      eqlx_chap_password_array => $eqlx_chap_password_array
+   }
+  }  
+}
+
